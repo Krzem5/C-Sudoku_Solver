@@ -39,9 +39,8 @@ uint8_t* _solve(uint8_t* b,uint16_t* dt){
 					mv=true;
 				}
 				else{
-					uint8_t sl=_BIT_CNT[s];
-					if (sl<mssl){
-						mssl=sl;
+					if (_BIT_CNT[s]<mssl){
+						mssl=_BIT_CNT[s];
 						msi=i;
 						msj=j;
 						msk=k;
