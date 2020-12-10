@@ -12,16 +12,17 @@ uint8_t* _solve(uint8_t* b,uint16_t* dt){
 	while (true){
 		uint8_t mssl=10;
 		uint8_t msi;
-		div_t msjk;
+		uint8_t msj;
+		uint8_t msk;
 		uint8_t msl;
 		uint16_t mss;
 		bool mv=false;
 		for (uint8_t i=0;i<81;i++){
 			if (*(b+i)==0){
-				div_t jk=div(i,9);
-				jk.rem+=9;
-				uint8_t l=jk.quot/3*3+jk.rem/3+15;
-				uint16_t s=(*(dt+jk.quot))&(*(dt+jk.rem))&(*(dt+l));
+				uint8_t j=i/9;
+				uint8_t k=i%9+9;
+				uint8_t l=j/3*3+k/3+15;
+				uint16_t s=(*(dt+j))&(*(dt+k))&(*(dt+l));
 				if (!s){
 					return NULL;
 				}
@@ -32,8 +33,8 @@ uint8_t* _solve(uint8_t* b,uint16_t* dt){
 					if (s>>=1){
 						goto _l;
 					}
-					(*(dt+jk.quot))&=m;
-					(*(dt+jk.rem))&=m;
+					(*(dt+j))&=m;
+					(*(dt+k))&=m;
 					(*(dt+l))&=m;
 					mv=true;
 				}
@@ -42,7 +43,8 @@ uint8_t* _solve(uint8_t* b,uint16_t* dt){
 					if (sl<mssl){
 						mssl=sl;
 						msi=i;
-						msjk=jk;
+						msj=j;
+						msk=k;
 						msl=l;
 						mss=s;
 					}
@@ -50,41 +52,42 @@ uint8_t* _solve(uint8_t* b,uint16_t* dt){
 			}
 		}
 		if (mv==false){
-			if (mssl!=10){
-				uint8_t n=0;
-				for (uint8_t i=0;i<9;i++){
-					uint16_t m=1<<(uint16_t)i;
-					if (mss&m){
-						n++;
-						m=~m;
-						uint8_t* nb=malloc(81*sizeof(uint8_t));
-						uint16_t* ndt=malloc(27*sizeof(uint16_t));
-						for (uint8_t i=0;i<81;i++){
-							*(nb+i)=*(b+i);
-							if (i<27){
-								*(ndt+i)=*(dt+i);
-							}
-						}
-						*(nb+msi)=i+1;
-						(*(ndt+msjk.quot))&=m;
-						(*(ndt+msjk.rem))&=m;
-						(*(ndt+msl))&=m;
-						uint8_t* nbr=_solve(nb,ndt);
-						free(ndt);
-						if (nbr!=NULL){
-							if (nbr!=nb){
-								free(nb);
-							}
-							return nbr;
-						}
-						free(nb);
-						if (n==mssl){
-							return NULL;
+			if (mssl==10){
+				return b;
+			}
+			uint8_t n=0;
+			uint8_t* nb=malloc(81*sizeof(uint8_t));
+			uint16_t* ndt=malloc(27*sizeof(uint16_t));
+			uint16_t m=1;
+			for (uint8_t i=0;i<9;i++){
+				if (mss&m){
+					n++;
+					for (uint8_t j=0;j<81;j++){
+						*(nb+j)=*(b+j);
+						if (j<27){
+							*(ndt+j)=*(dt+j);
 						}
 					}
+					*(nb+msi)=i+1;
+					(*(ndt+msj))&=~m;
+					(*(ndt+msk))&=~m;
+					(*(ndt+msl))&=~m;
+					uint8_t* nbr=_solve(nb,ndt);
+					if (nbr!=NULL){
+						free(ndt);
+						if (nbr!=nb){
+							free(nb);
+						}
+						return nbr;
+					}
+					if (n==mssl){
+						free(nb);
+						free(ndt);
+						return NULL;
+					}
 				}
+				m<<=1;
 			}
-			return b;
 		}
 	}
 }
@@ -99,11 +102,11 @@ void solve_sudoku(uint8_t* b){
 	for (uint8_t i=0;i<81;i++){
 		if (*(b+i)!=0){
 			uint16_t m=~(1<<((uint16_t)*(b+i)-1));
-			div_t jk=div(i,9);
-			jk.rem+=9;
-			uint8_t l=jk.quot/3*3+jk.rem/3+15;
-			(*(dt+jk.quot))&=m;
-			(*(dt+jk.rem))&=m;
+			uint8_t j=i/9;
+			uint8_t k=i%9+9;
+			uint8_t l=j/3*3+k/3+15;
+			(*(dt+j))&=m;
+			(*(dt+k))&=m;
 			(*(dt+l))&=m;
 		}
 	}
