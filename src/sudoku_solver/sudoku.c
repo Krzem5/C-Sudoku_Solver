@@ -51,6 +51,7 @@ uint8_t* _solve(uint8_t* b,uint16_t* dt){
 			}
 		}
 		if (mv==false){
+			// mssl=10;
 			if (mssl==10){
 				return b;
 			}
@@ -100,13 +101,12 @@ void solve_sudoku(uint8_t* b){
 	}
 	for (uint8_t i=0;i<81;i++){
 		if (*(b+i)!=0){
-			uint16_t m=~(1<<((uint16_t)*(b+i)-1));
 			uint8_t j=i/9;
 			uint8_t k=i%9+9;
-			uint8_t l=j/3*3+k/3+15;
+			uint16_t m=~(1<<((uint16_t)*(b+i)-1));
 			(*(dt+j))&=m;
 			(*(dt+k))&=m;
-			(*(dt+l))&=m;
+			(*(dt+j/3*3+k/3+15))&=m;
 		}
 	}
 	uint8_t* sb=_solve(b,dt);
