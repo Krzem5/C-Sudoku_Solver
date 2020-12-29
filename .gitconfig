@@ -1,7 +1,7 @@
 ### Github File Push Config
 
-name=c-sudoku_solver
-desc=c-sudoku_solver
+name=C-Sudoku_Solver
+desc=C-Sudoku_Solver
 public=true
 homepage=
 license=mit
