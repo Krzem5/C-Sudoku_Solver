@@ -1,5 +1,6 @@
 #include <sudoku.h>
 #include <intrin.h>
+#include <stdint.h>
 #pragma intrinsic(__popcnt16)
 #pragma intrinsic(__movsq)
 #pragma intrinsic(_BitScanForward)
