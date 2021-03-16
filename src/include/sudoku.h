@@ -23,7 +23,7 @@
 
 
 
-void solve_sudoku(uint8_t* b);
+uint8_t solve_sudoku(uint8_t* b);
 
 
 

@@ -50,10 +50,15 @@ int main(int argc,const char** argv){
 	uint8_t b[]={0,0,0,0,0,0,0,1,2,0,0,0,0,3,5,0,0,0,0,0,0,6,0,0,0,7,0,7,0,0,0,0,0,3,0,0,0,0,0,4,0,0,8,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1,2,0,0,0,0,0,8,0,0,0,0,0,4,0,0,5,0,0,0,0,6,0,0};
 	print_board(b);
 	QueryPerformanceCounter(&s);
-	solve_sudoku(b);
+	uint8_t o=solve_sudoku(b);
 	QueryPerformanceCounter(&e);
 	putchar('\n');
-	print_board(b);
+	if (o){
+		print_board(b);
+	}
+	else{
+		printf("Failed to solve Sudoku!\n");
+	}
 	printf("Time: %.6fs\n",(e.QuadPart-s.QuadPart)*1e6/f.QuadPart*1e-6);
 	return 0;
 }
