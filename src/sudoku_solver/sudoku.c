@@ -1,8 +1,9 @@
 #include <sudoku.h>
 #include <intrin.h>
 #include <stdint.h>
-#pragma intrinsic(__popcnt16)
 #pragma intrinsic(__movsq)
+#pragma intrinsic(__popcnt16)
+#pragma intrinsic(__stosw)
 #pragma intrinsic(_BitScanForward)
 #pragma intrinsic(_BitScanForward64)
 
@@ -17,12 +18,12 @@ typedef struct __SOLVE_BOARD{
 
 
 uint8_t _solve(solve_board_t* b,uint8_t* o){
-	uint8_t mssl=10;
-	uint8_t msi;
-	uint8_t msj;
-	uint8_t msk;
-	uint8_t msl;
-	uint16_t mss;
+	uint8_t nmsl=10;
+	uint8_t nmi;
+	uint8_t nmj;
+	uint8_t nmk;
+	uint8_t nml;
+	uint16_t nms;
 _nxt_move:
 	uint64_t za=b->za;
 	uint32_t zb=b->zb;
@@ -59,46 +60,46 @@ _nxt_move:
 			b->dt[j]&=s;
 			b->dt[k]&=s;
 			b->dt[l]&=s;
-			mssl|=16;
+			nmsl=0;
 		}
-		else if (bc<(mssl&15)){
-			mssl=bc|(mssl&16);
-			msi=(uint8_t)i;
-			msj=j;
-			msk=k;
-			msl=l;
-			mss=s;
+		else if (nmsl&&bc<nmsl){
+			nmsl=(uint8_t)bc;
+			nmi=(uint8_t)i;
+			nmj=j;
+			nmk=k;
+			nml=l;
+			nms=s;
 		}
 	}
-	if (mssl&16){
-		mssl=10;
+	if (!nmsl){
+		nmsl=10;
 		goto _nxt_move;
 	}
-	if (mssl==10){
+	if (nmsl==10){
 		return 1;
 	}
-	if (msi<64){
-		b->za&=~(1ull<<msi);
+	if (nmi<64){
+		b->za&=~(1ull<<nmi);
 	}
 	else{
-		b->zb&=~(1ull<<(msi-64));
+		b->zb&=~(1ull<<(nmi-64));
 	}
 	solve_board_t nb;
 _check_all:
 	unsigned long i;
-	_BitScanForward(&i,mss);
+	_BitScanForward(&i,nms);
 	__movsq((uint64_t*)(&nb),(uint64_t*)b,8);
 	nb.dt[26]=b->dt[26];
-	*(o+msi)=(uint8_t)i+1;
+	*(o+nmi)=(uint8_t)i+1;
 	uint16_t m=~(1<<i);
-	mss&=m;
-	nb.dt[msj]&=m;
-	nb.dt[msk]&=m;
-	nb.dt[msl]&=m;
+	nms&=m;
+	nb.dt[nmj]&=m;
+	nb.dt[nmk]&=m;
+	nb.dt[nml]&=m;
 	if (_solve(&nb,o)){
 		return 1;
 	}
-	if (mss){
+	if (nms){
 		goto _check_all;
 	}
 	return 0;
