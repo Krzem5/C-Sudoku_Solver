@@ -10,8 +10,8 @@
 
 
 typedef struct __SOLVE_BOARD{
-	uint64_t za;
-	uint32_t zb;
+	uint64_t z64;
+	uint32_t z32;
 	uint16_t dt[27];
 } solve_board_t;
 
@@ -22,17 +22,17 @@ uint8_t _solve(solve_board_t* b,uint8_t* o){
 	uint8_t nmi;
 	uint16_t nms;
 _nxt_move:
-	uint64_t za=b->za;
-	uint32_t zb=b->zb;
-	while (za||zb){
+	uint64_t z64=b->z64;
+	uint32_t z32=b->z32;
+	while (z64||z32){
 		unsigned long i;
-		if (za){
-			_BitScanForward64(&i,za);
-			za&=~(1ull<<i);
+		if (z64){
+			_BitScanForward64(&i,z64);
+			z64&=~(1ull<<i);
 		}
 		else{
-			_BitScanForward(&i,zb);
-			zb&=~(1<<i);
+			_BitScanForward(&i,z32);
+			z32&=~(1<<i);
 			i+=64;
 		}
 		uint8_t j=(uint8_t)i/9;
@@ -48,10 +48,10 @@ _nxt_move:
 			_BitScanForward(&bi,s);
 			*(o+i)=(uint8_t)bi+1;
 			if (i<64){
-				b->za&=~(1ull<<i);
+				b->z64&=~(1ull<<i);
 			}
 			else{
-				b->zb&=~(1<<(i-64));
+				b->z32&=~(1<<(i-64));
 			}
 			s=~s;
 			b->dt[j]&=s;
@@ -73,10 +73,10 @@ _nxt_move:
 		return 1;
 	}
 	if (nmi<64){
-		b->za&=~(1ull<<nmi);
+		b->z64&=~(1ull<<nmi);
 	}
 	else{
-		b->zb&=~(1<<(nmi-64));
+		b->z32&=~(1<<(nmi-64));
 	}
 	uint8_t j=nmi/9;
 	uint8_t k=nmi%9+9;
@@ -121,10 +121,10 @@ uint8_t solve_sudoku(uint8_t* b){
 		}
 		else{
 			if (i<64){
-				sb.za|=(1ull<<i);
+				sb.z64|=(1ull<<i);
 			}
 			else{
-				sb.zb|=(1<<(i-64));
+				sb.z32|=(1<<(i-64));
 			}
 		}
 	}
