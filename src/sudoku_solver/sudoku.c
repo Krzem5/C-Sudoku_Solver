@@ -18,11 +18,8 @@ typedef struct __SOLVE_BOARD{
 
 
 uint8_t _solve(solve_board_t* b,uint8_t* o){
-	uint8_t nmsl=10;
+	uint8_t f=10;
 	uint8_t nmi;
-	uint8_t nmj;
-	uint8_t nmk;
-	uint8_t nml;
 	uint16_t nms;
 _nxt_move:
 	uint64_t za=b->za;
@@ -60,22 +57,19 @@ _nxt_move:
 			b->dt[j]&=s;
 			b->dt[k]&=s;
 			b->dt[l]&=s;
-			nmsl=0;
+			f=0;
 		}
-		else if (nmsl&&bc<nmsl){
-			nmsl=(uint8_t)bc;
+		else if (f&&bc<f){
+			f=(uint8_t)bc;
 			nmi=(uint8_t)i;
-			nmj=j;
-			nmk=k;
-			nml=l;
 			nms=s;
 		}
 	}
-	if (!nmsl){
-		nmsl=10;
+	if (!f){
+		f=10;
 		goto _nxt_move;
 	}
-	if (nmsl==10){
+	if (f==10){
 		return 1;
 	}
 	if (nmi<64){
@@ -84,6 +78,9 @@ _nxt_move:
 	else{
 		b->zb&=~(1ull<<(nmi-64));
 	}
+	uint8_t j=nmi/9;
+	uint8_t k=nmi%9+9;
+	uint8_t l=j/3*3+k/3+15;
 	solve_board_t nb;
 _check_all:
 	unsigned long i;
@@ -93,9 +90,9 @@ _check_all:
 	*(o+nmi)=(uint8_t)i+1;
 	uint16_t m=~(1<<i);
 	nms&=m;
-	nb.dt[nmj]&=m;
-	nb.dt[nmk]&=m;
-	nb.dt[nml]&=m;
+	nb.dt[j]&=m;
+	nb.dt[k]&=m;
+	nb.dt[l]&=m;
 	if (_solve(&nb,o)){
 		return 1;
 	}
@@ -117,7 +114,7 @@ uint8_t solve_sudoku(uint8_t* b){
 		if (*(b+i)){
 			uint8_t j=i/9;
 			uint8_t k=i%9+9;
-			uint16_t m=~(1<<((uint16_t)*(b+i)-1));
+			uint16_t m=~(1<<((uint16_t)(*(b+i))-1));
 			sb.dt[j]&=m;
 			sb.dt[k]&=m;
 			sb.dt[j/3*3+k/3+15]&=m;
