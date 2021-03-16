@@ -32,7 +32,7 @@ _nxt_move:
 		}
 		else{
 			_BitScanForward(&i,zb);
-			zb&=~(1ull<<i);
+			zb&=~(1<<i);
 			i+=64;
 		}
 		uint8_t j=(uint8_t)i/9;
@@ -44,14 +44,14 @@ _nxt_move:
 		}
 		unsigned short bc=__popcnt16(s);
 		if (bc==1){
-			unsigned long lg;
-			_BitScanForward(&lg,s);
-			*(o+i)=(uint8_t)lg+1;
+			unsigned long bi;
+			_BitScanForward(&bi,s);
+			*(o+i)=(uint8_t)bi+1;
 			if (i<64){
 				b->za&=~(1ull<<i);
 			}
 			else{
-				b->zb&=~(1ull<<(i-64));
+				b->zb&=~(1<<(i-64));
 			}
 			s=~s;
 			b->dt[j]&=s;
@@ -76,7 +76,7 @@ _nxt_move:
 		b->za&=~(1ull<<nmi);
 	}
 	else{
-		b->zb&=~(1ull<<(nmi-64));
+		b->zb&=~(1<<(nmi-64));
 	}
 	uint8_t j=nmi/9;
 	uint8_t k=nmi%9+9;
@@ -124,7 +124,7 @@ uint8_t solve_sudoku(uint8_t* b){
 				sb.za|=(1ull<<i);
 			}
 			else{
-				sb.zb|=(1ull<<(i-64));
+				sb.zb|=(1<<(i-64));
 			}
 		}
 	}
