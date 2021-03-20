@@ -52,10 +52,9 @@ _nxt_move:
 			else{
 				b->z32&=~(1<<(i-64));
 			}
-			s=~s;
-			(*j)&=s;
-			(*k)&=s;
-			(*l)&=s;
+			(*j)&=~s;
+			(*k)&=~s;
+			(*l)&=~s;
 			f=0;
 		}
 		else if (f&&bc<f){
@@ -113,13 +112,12 @@ uint8_t solve_sudoku(uint8_t* b){
 	};
 	__stosw((unsigned short*)sb.dt,0x1ff,27);
 	for (uint8_t i=0;i<81;i++){
-		if (*(b+i)){
-			uint8_t j=i/9;
-			uint8_t k=i%9+9;
-			uint16_t m=~(1<<((uint16_t)(*(b+i))-1));
-			sb.dt[j]&=m;
-			sb.dt[k]&=m;
-			sb.dt[j/3*3+k/3+15]&=m;
+		uint8_t v=*(b+i);
+		if (v){
+			uint16_t m=~(1<<(v-1));
+			sb.dt[i/9]&=m;
+			sb.dt[i%9+9]&=m;
+			sb.dt[i/27*3+(i%9)/3+18]&=m;
 		}
 		else{
 			if (i<64){
