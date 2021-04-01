@@ -23,7 +23,7 @@ typedef struct __SOLVE_BOARD{
 
 uint8_t _solve(solve_board_t* b,uint8_t* o){
 	unsigned short f=10;
-	unsigned long nmi;
+	uint8_t nmi;
 _nxt_move:
 	uint64_t z64=b->z64;
 	uint32_t z32=b->z80|(((uint32_t)b->dt[0]&Z81_MASK)<<7);
@@ -35,7 +35,7 @@ _nxt_move:
 		}
 		else{
 			_BitScanForward(&i,z32);
-			z32&=~(1<<i);
+			z32&=~(1u<<i);
 			i+=64;
 		}
 		uint16_t* j=b->dt+i/9;
@@ -54,7 +54,7 @@ _nxt_move:
 				b->z64&=~(1ull<<i);
 			}
 			else if (i<80){
-				b->z80&=~(1<<(i-64));
+				b->z80&=~(1u<<(i-64));
 			}
 			else{
 				b->dt[0]&=~Z81_MASK;
@@ -66,7 +66,7 @@ _nxt_move:
 		}
 		else if (f&&bc<f){
 			f=bc;
-			nmi=i;
+			nmi=(uint8_t)i;
 		}
 	}
 	if (!f){
@@ -80,13 +80,13 @@ _nxt_move:
 		b->z64&=~(1ull<<nmi);
 	}
 	else if (nmi<80){
-		b->z80&=~(1<<(nmi-64));
+		b->z80&=~(1u<<(nmi-64));
 	}
 	else{
 		b->dt[0]&=~Z81_MASK;
 	}
-	uint8_t j=((uint8_t)nmi)/9;
-	uint8_t k=((uint8_t)nmi)%9+9;
+	uint8_t j=(nmi)/9;
+	uint8_t k=(nmi)%9+9;
 	uint8_t l=j/3*3+k/3+15;
 	uint16_t s=(b->dt[j]&0x1ff)&(b->dt[k])&(b->dt[l]);
 	solve_board_t nb;
