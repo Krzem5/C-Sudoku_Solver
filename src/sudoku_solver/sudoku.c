@@ -9,20 +9,24 @@
 
 
 
+#define Z81_MASK 0x200
+
+
+
 typedef struct __SOLVE_BOARD{
 	uint64_t z64;
-	uint32_t z32;
+	uint16_t z80;
 	uint16_t dt[27];
 } solve_board_t;
 
 
 
 uint8_t _solve(solve_board_t* b,uint8_t* o){
-	uint8_t f=10;
+	unsigned short f=10;
 	uint8_t nmi;
 _nxt_move:
 	uint64_t z64=b->z64;
-	uint32_t z32=b->z32;
+	uint32_t z32=b->z80|(((uint32_t)b->dt[0]&Z81_MASK)<<7);
 	while (z64||z32){
 		unsigned long i;
 		if (z64){
@@ -31,13 +35,13 @@ _nxt_move:
 		}
 		else{
 			_BitScanForward(&i,z32);
-			z32&=~(1<<i);
+			z32&=~(1u<<i);
 			i+=64;
 		}
 		uint16_t* j=b->dt+i/9;
 		uint16_t* k=b->dt+i%9+9;
 		uint16_t* l=b->dt+i/27*3+(i%9)/3+18;
-		uint16_t s=(*j)&(*k)&(*l);
+		uint16_t s=((*j)&0x1ff)&(*k)&(*l);
 		if (!s){
 			return 0;
 		}
@@ -49,8 +53,11 @@ _nxt_move:
 			if (i<64){
 				b->z64&=~(1ull<<i);
 			}
+			else if (i<80){
+				b->z80&=~(1u<<(i-64));
+			}
 			else{
-				b->z32&=~(1<<(i-64));
+				b->dt[0]&=~Z81_MASK;
 			}
 			(*j)&=~s;
 			(*k)&=~s;
@@ -58,7 +65,7 @@ _nxt_move:
 			f=0;
 		}
 		else if (f&&bc<f){
-			f=(uint8_t)bc;
+			f=bc;
 			nmi=(uint8_t)i;
 		}
 	}
@@ -72,13 +79,16 @@ _nxt_move:
 	if (nmi<64){
 		b->z64&=~(1ull<<nmi);
 	}
-	else{
-		b->z32&=~(1<<(nmi-64));
+	else if (nmi<80){
+		b->z80&=~(1u<<(nmi-64));
 	}
-	uint8_t j=nmi/9;
-	uint8_t k=nmi%9+9;
+	else{
+		b->dt[0]&=~Z81_MASK;
+	}
+	uint8_t j=(nmi)/9;
+	uint8_t k=(nmi)%9+9;
 	uint8_t l=j/3*3+k/3+15;
-	uint16_t s=(b->dt[j])&(b->dt[k])&(b->dt[l]);
+	uint16_t s=(b->dt[j]&0x1ff)&(b->dt[k])&(b->dt[l]);
 	solve_board_t nb;
 	uint16_t* nb_j=nb.dt+j;
 	uint16_t* nb_k=nb.dt+k;
@@ -87,7 +97,6 @@ _check_all:
 	unsigned long i;
 	_BitScanForward(&i,s);
 	__movsq((uint64_t*)(&nb),(uint64_t*)b,8);
-	nb.dt[26]=b->dt[26];
 	uint16_t m=~(1<<(uint16_t)i);
 	s&=m;
 	(*nb_j)&=m;
@@ -123,8 +132,11 @@ uint8_t solve_sudoku(uint8_t* b){
 			if (i<64){
 				sb.z64|=(1ull<<i);
 			}
+			else if (i<80){
+				sb.z80|=(1<<(i-64));
+			}
 			else{
-				sb.z32|=(1<<(i-64));
+				sb.dt[0]|=Z81_MASK;
 			}
 		}
 	}
