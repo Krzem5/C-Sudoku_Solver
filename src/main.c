@@ -1,5 +1,10 @@
-#include <sudoku.h>
+#ifdef _MSC_VER
+#define WIN32_LEAN_AND_MEAN 1
 #include <windows.h>
+#else
+#include <time.h>
+#endif
+#include <sudoku.h>
 #include <stdio.h>
 
 
@@ -39,18 +44,31 @@ void print_board(uint8_t* b){
 
 
 int main(int argc,const char** argv){
+	uint8_t b[81]={0,0,0,0,0,0,0,1,2,0,0,0,0,3,5,0,0,0,0,0,0,6,0,0,0,7,0,7,0,0,0,0,0,3,0,0,0,0,0,4,0,0,8,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1,2,0,0,0,0,0,8,0,0,0,0,0,4,0,0,5,0,0,0,0,6,0,0};
+	print_board(b);
+#ifdef _MSC_VER
 	SetConsoleOutputCP(CP_UTF8);
 	SetConsoleMode(GetStdHandle(-11),7);
-	SetPriorityClass(GetCurrentProcess(),HIGH_PRIORITY_CLASS);
+	HANDLE p=GetCurrentProcess();
+	SetPriorityClass(p,HIGH_PRIORITY_CLASS);
 	LARGE_INTEGER f;
 	LARGE_INTEGER s;
 	LARGE_INTEGER e;
 	QueryPerformanceFrequency(&f);
-	uint8_t b[81]={0,0,0,0,0,0,0,1,2,0,0,0,0,3,5,0,0,0,0,0,0,6,0,0,0,7,0,7,0,0,0,0,0,3,0,0,0,0,0,4,0,0,8,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1,2,0,0,0,0,0,8,0,0,0,0,0,4,0,0,5,0,0,0,0,6,0,0};
-	print_board(b);
 	QueryPerformanceCounter(&s);
+#else
+	struct timespec s;
+	struct timespec e;
+	clock_gettime(CLOCK_REALTIME,&s);
+#endif
 	uint8_t o=solve_sudoku(b);
+#ifdef _MSC_VER
 	QueryPerformanceCounter(&e);
+	double dt=(e.QuadPart-s.QuadPart)*1e6/f.QuadPart*1e-6;
+#else
+	clock_gettime(CLOCK_REALTIME,&e);
+	double dt=e.tv_sec-s.tv_sec+(e.tv_nsec-s.tv_nsec)*1e-9;
+#endif
 	putchar('\n');
 	if (o){
 		print_board(b);
@@ -58,6 +76,6 @@ int main(int argc,const char** argv){
 	else{
 		printf("Failed to Solve Sudoku!\n");
 	}
-	printf("Time: %.6fs\n",(e.QuadPart-s.QuadPart)*1e6/f.QuadPart*1e-6);
+	printf("Time: %.6fs\n",dt);
 	return 0;
 }

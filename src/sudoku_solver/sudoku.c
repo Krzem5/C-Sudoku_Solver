@@ -1,9 +1,23 @@
-#include <sudoku.h>
+#ifdef _MSC_VER
 #include <intrin.h>
+#endif
+#include <sudoku.h>
 #include <stdint.h>
+
+
+
+#ifdef _MSC_VER
 #pragma intrinsic(__popcnt16)
 #pragma intrinsic(_BitScanForward)
 #pragma intrinsic(_BitScanForward64)
+#define POPCOUNT16(x) __popcnt16((x))
+#define FIND_FIRST_SET_BIT(i,m) _BitScanForward(&(i),(m))
+#define FIND_FIRST_SET_BIT64(i,m) _BitScanForward64(&(i),(m))
+#else
+#define POPCOUNT16(x) __builtin_popcount((x))
+#define FIND_FIRST_SET_BIT(i,m) ((i)=(__builtin_ffs((m))-1))
+#define FIND_FIRST_SET_BIT64(i,m) ((i)=(__builtin_ffsll((m))-1))
+#endif
 
 
 
@@ -21,7 +35,7 @@ typedef struct __SOLVE_BOARD{
 
 uint8_t _solve(solve_board_t* b,uint8_t* o){
 	unsigned short f;
-	uint8_t nmi;
+	uint8_t nmi=0;
 	uint32_t z81=(b->dt[0]&Z81_MASK);
 	b->dt[0]&=~Z81_MASK;
 	do{
@@ -31,11 +45,11 @@ uint8_t _solve(solve_board_t* b,uint8_t* o){
 		while (z64||z32){
 			unsigned long i;
 			if (z64){
-				_BitScanForward64(&i,z64);
+				FIND_FIRST_SET_BIT64(i,z64);
 				z64&=~(1ull<<i);
 			}
 			else{
-				_BitScanForward(&i,z32);
+				FIND_FIRST_SET_BIT(i,z32);
 				z32&=~(1u<<i);
 				i+=64;
 			}
@@ -46,10 +60,10 @@ uint8_t _solve(solve_board_t* b,uint8_t* o){
 			if (!s){
 				return 0;
 			}
-			unsigned short bc=__popcnt16(s);
+			unsigned short bc=POPCOUNT16(s);
 			if (bc==1){
 				unsigned long bi;
-				_BitScanForward(&bi,s);
+				FIND_FIRST_SET_BIT(bi,s);
 				*(o+i)=(uint8_t)bi+1;
 				if (i<64){
 					b->z64&=~(1ull<<i);
@@ -94,7 +108,7 @@ uint8_t _solve(solve_board_t* b,uint8_t* o){
 	uint16_t* nb_l=nb.dt+l;
 	while (1){
 		unsigned long i;
-		_BitScanForward(&i,s);
+		FIND_FIRST_SET_BIT(i,s);
 		uint16_t m=~(1<<(uint16_t)i);
 		s&=m;
 		(*nb_j)&=m;
@@ -147,7 +161,9 @@ uint8_t solve_sudoku(uint8_t* b){
 			0x1ff
 		}
 	};
+	uint8_t tmp[81];
 	for (uint8_t i=0;i<81;i++){
+		tmp[i]=*(b+i);
 		if (*(b+i)){
 			uint16_t m=~(1<<((*(b+i))-1));
 			sb.dt[i/9]&=m;
@@ -166,5 +182,11 @@ uint8_t solve_sudoku(uint8_t* b){
 			}
 		}
 	}
-	return _solve(&sb,b);
+	if (_solve(&sb,tmp)){
+		for (uint8_t i=0;i<81;i++){
+			*(b+i)=tmp[i];
+		}
+		return 1;
+	}
+	return 0;
 }
