@@ -36,7 +36,7 @@ typedef struct __SOLVE_BOARD{
 uint8_t _solve(solve_board_t* b,uint8_t* o){
 	unsigned short f;
 	uint8_t nmi=0;
-	uint32_t z81=(b->dt[0]&Z81_MASK);
+	uint16_t z81=(b->dt[0]&Z81_MASK);
 	b->dt[0]&=~Z81_MASK;
 	do{
 		f=10;
@@ -46,11 +46,11 @@ uint8_t _solve(solve_board_t* b,uint8_t* o){
 			unsigned long i;
 			if (z64){
 				FIND_FIRST_SET_BIT64(i,z64);
-				z64&=~(1ull<<i);
+				z64&=z64-1;
 			}
 			else{
 				FIND_FIRST_SET_BIT(i,z32);
-				z32&=~(1u<<i);
+				z32&=z32-1;
 				i+=64;
 			}
 			uint16_t* j=b->dt+i/9;
@@ -60,8 +60,7 @@ uint8_t _solve(solve_board_t* b,uint8_t* o){
 			if (!s){
 				return 0;
 			}
-			unsigned short bc=POPCOUNT16(s);
-			if (bc==1){
+			if (!(s&(s-1))){
 				unsigned long bi;
 				FIND_FIRST_SET_BIT(bi,s);
 				*(o+i)=(uint8_t)bi+1;
@@ -69,7 +68,7 @@ uint8_t _solve(solve_board_t* b,uint8_t* o){
 					b->z64&=~(1ull<<i);
 				}
 				else if (i<80){
-					b->z80&=~(1u<<(i-64));
+					b->z80&=~(1ull<<(i-64));
 				}
 				else{
 					z81=0;
@@ -79,9 +78,12 @@ uint8_t _solve(solve_board_t* b,uint8_t* o){
 				(*l)&=~s;
 				f=0;
 			}
-			else if (f&&bc<f){
-				f=bc;
-				nmi=(uint8_t)i;
+			else if (f){
+				unsigned short bc=POPCOUNT16(s);
+				if (bc<f){
+					f=bc;
+					nmi=(uint8_t)i;
+				}
 			}
 		}
 	} while (!f);
@@ -97,8 +99,8 @@ uint8_t _solve(solve_board_t* b,uint8_t* o){
 	else{
 		b->dt[0]&=~Z81_MASK;
 	}
-	uint8_t j=(nmi)/9;
-	uint8_t k=(nmi)%9+9;
+	uint8_t j=nmi/9;
+	uint8_t k=nmi%9+9;
 	uint8_t l=j/3*3+k/3+15;
 	uint16_t s=(b->dt[j])&(b->dt[k])&(b->dt[l]);
 	b->dt[0]|=z81;
@@ -106,23 +108,21 @@ uint8_t _solve(solve_board_t* b,uint8_t* o){
 	uint16_t* nb_j=nb.dt+j;
 	uint16_t* nb_k=nb.dt+k;
 	uint16_t* nb_l=nb.dt+l;
-	while (1){
-		unsigned long i;
-		FIND_FIRST_SET_BIT(i,s);
-		uint16_t m=~(1<<(uint16_t)i);
-		s&=m;
+	do{
+		uint16_t m=(~s)|(s-1);
 		(*nb_j)&=m;
 		(*nb_k)&=m;
 		(*nb_l)&=m;
 		if (_solve(&nb,o)){
+			unsigned long i;
+			FIND_FIRST_SET_BIT(i,~m);
 			*(o+nmi)=(uint8_t)i+1;
 			return 1;
 		}
-		if (!s){
-			return 0;
-		}
+		s&=s-1;
 		nb=*b;
-	}
+	} while (s);
+	return 0;
 }
 
 
