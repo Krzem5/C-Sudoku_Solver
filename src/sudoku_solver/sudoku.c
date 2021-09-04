@@ -3,6 +3,7 @@
 #endif
 #include <sudoku.h>
 #include <stdint.h>
+#include <string.h>
 
 
 
@@ -21,13 +22,9 @@
 
 
 
-#define Z81_MASK 0x8000
-
-
-
 typedef struct __SOLVE_BOARD{
 	uint64_t z64;
-	uint16_t z80;
+	uint32_t z32;
 	uint16_t dt[27];
 } solve_board_t;
 
@@ -35,13 +32,11 @@ typedef struct __SOLVE_BOARD{
 
 uint8_t _solve(solve_board_t* b,uint8_t* o){
 	unsigned short f;
-	uint8_t nmi=0;
-	uint16_t z81=(b->dt[0]&Z81_MASK);
-	b->dt[0]&=~Z81_MASK;
+	unsigned long nmi=0;
 	do{
 		f=10;
 		uint64_t z64=b->z64;
-		uint32_t z32=b->z80|(z81<<1);
+		uint32_t z32=b->z32;
 		while (z64||z32){
 			unsigned long i;
 			if (z64){
@@ -67,11 +62,8 @@ uint8_t _solve(solve_board_t* b,uint8_t* o){
 				if (i<64){
 					b->z64&=~(1ull<<i);
 				}
-				else if (i<80){
-					b->z80&=~(1ull<<(i-64));
-				}
 				else{
-					z81=0;
+					b->z32&=~(1ull<<(i-64));
 				}
 				(*j)&=~s;
 				(*k)&=~s;
@@ -82,7 +74,7 @@ uint8_t _solve(solve_board_t* b,uint8_t* o){
 				unsigned short bc=POPCOUNT16(s);
 				if (bc<f){
 					f=bc;
-					nmi=(uint8_t)i;
+					nmi=i;
 				}
 			}
 		}
@@ -93,22 +85,18 @@ uint8_t _solve(solve_board_t* b,uint8_t* o){
 	if (nmi<64){
 		b->z64&=~(1ull<<nmi);
 	}
-	else if (nmi<80){
-		b->z80&=~(1u<<(nmi-64));
-	}
 	else{
-		b->dt[0]&=~Z81_MASK;
+		b->z32&=~(1u<<(nmi-64));
 	}
-	uint8_t j=nmi/9;
-	uint8_t k=nmi%9+9;
-	uint8_t l=j/3*3+k/3+15;
+	unsigned long j=nmi/9;
+	unsigned long k=nmi%9+9;
+	unsigned long l=j/3*3+k/3+15;
 	uint16_t s=(b->dt[j])&(b->dt[k])&(b->dt[l]);
-	b->dt[0]|=z81;
 	solve_board_t nb=*b;
 	uint16_t* nb_j=nb.dt+j;
 	uint16_t* nb_k=nb.dt+k;
 	uint16_t* nb_l=nb.dt+l;
-	do{
+	while (1){
 		uint16_t m=(~s)|(s-1);
 		(*nb_j)&=m;
 		(*nb_k)&=m;
@@ -120,8 +108,11 @@ uint8_t _solve(solve_board_t* b,uint8_t* o){
 			return 1;
 		}
 		s&=s-1;
+		if (!s){
+			break;
+		}
 		nb=*b;
-	} while (s);
+	}
 	return 0;
 }
 
@@ -162,30 +153,23 @@ uint8_t solve_sudoku(uint8_t* b){
 		}
 	};
 	uint8_t tmp[81];
+	memcpy(tmp,b,81*sizeof(uint8_t));
 	for (uint8_t i=0;i<81;i++){
-		tmp[i]=*(b+i);
 		if (*(b+i)){
 			uint16_t m=~(1<<((*(b+i))-1));
 			sb.dt[i/9]&=m;
 			sb.dt[i%9+9]&=m;
 			sb.dt[i/27*3+(i%9)/3+18]&=m;
 		}
+		else if (i<64){
+			sb.z64|=(1ull<<i);
+		}
 		else{
-			if (i<64){
-				sb.z64|=(1ull<<i);
-			}
-			else if (i<80){
-				sb.z80|=(1<<(i-64));
-			}
-			else{
-				sb.dt[0]|=Z81_MASK;
-			}
+			sb.z32|=(1<<(i-64));
 		}
 	}
 	if (_solve(&sb,tmp)){
-		for (uint8_t i=0;i<81;i++){
-			*(b+i)=tmp[i];
-		}
+		memcpy(b,tmp,81*sizeof(uint8_t));
 		return 1;
 	}
 	return 0;

@@ -53,10 +53,12 @@ int main(int argc,const char** argv){
 #else
 	uint8_t b[81]={0,6,9,0,5,0,3,0,0,0,8,1,0,9,3,0,0,5,0,0,5,4,8,0,0,1,0,9,2,6,0,0,0,7,0,8,0,5,0,0,0,0,0,4,9,0,0,0,0,0,9,6,0,1,0,0,4,0,3,8,0,2,7,0,0,0,0,4,5,0,0,0,5,1,0,2,7,6,8,0,4};
 #endif
-	print_board(b);
 #ifdef _MSC_VER
 	SetConsoleOutputCP(CP_UTF8);
 	SetConsoleMode(GetStdHandle(-11),7);
+#endif
+	print_board(b);
+#ifdef _MSC_VER
 	HANDLE p=GetCurrentProcess();
 	SetPriorityClass(p,HIGH_PRIORITY_CLASS);
 	LARGE_INTEGER f;
