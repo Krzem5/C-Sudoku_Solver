@@ -1,7 +1,6 @@
 #ifdef _MSC_VER
 #include <intrin.h>
 #endif
-#include <sudoku.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -30,6 +29,12 @@ typedef struct __SOLVE_BOARD{
 
 
 
+uint8_t _div_9_table[81]={0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,6,6,6,6,6,6,6,6,6,7,7,7,7,7,7,7,7,7,8,8,8,8,8,8,8,8,8};// i/9
+uint8_t _mod_9_plus_9_table[81]={9,10,11,12,13,14,15,16,17,9,10,11,12,13,14,15,16,17,9,10,11,12,13,14,15,16,17,9,10,11,12,13,14,15,16,17,9,10,11,12,13,14,15,16,17,9,10,11,12,13,14,15,16,17,9,10,11,12,13,14,15,16,17,9,10,11,12,13,14,15,16,17,9,10,11,12,13,14,15,16,17};// (i%9)+9
+uint8_t _div_27_times_3_plus_mod_9_div_3_plus_18[81]={18,18,18,19,19,19,20,20,20,18,18,18,19,19,19,20,20,20,18,18,18,19,19,19,20,20,20,21,21,21,22,22,22,23,23,23,21,21,21,22,22,22,23,23,23,21,21,21,22,22,22,23,23,23,24,24,24,25,25,25,26,26,26,24,24,24,25,25,25,26,26,26,24,24,24,25,25,25,26,26,26};// i/27*3+(i%9)/3+18
+
+
+
 uint8_t _solve(solve_board_t* b,uint8_t* o){
 	unsigned short f;
 	unsigned long nmi=0;
@@ -48,9 +53,9 @@ uint8_t _solve(solve_board_t* b,uint8_t* o){
 				z32&=z32-1;
 				i+=64;
 			}
-			uint16_t* j=b->dt+i/9;
-			uint16_t* k=b->dt+i%9+9;
-			uint16_t* l=b->dt+i/27*3+(i%9)/3+18;
+			uint16_t* j=b->dt+_div_9_table[i];
+			uint16_t* k=b->dt+_mod_9_plus_9_table[i];
+			uint16_t* l=b->dt+_div_27_times_3_plus_mod_9_div_3_plus_18[i];
 			uint16_t s=(*j)&(*k)&(*l);
 			if (!s){
 				return 0;
@@ -88,19 +93,17 @@ uint8_t _solve(solve_board_t* b,uint8_t* o){
 	else{
 		b->z32&=~(1u<<(nmi-64));
 	}
-	unsigned long j=nmi/9;
-	unsigned long k=nmi%9+9;
-	unsigned long l=j/3*3+k/3+15;
+	unsigned long j=_div_9_table[nmi];
+	unsigned long k=_mod_9_plus_9_table[nmi];
+	unsigned long l=_div_27_times_3_plus_mod_9_div_3_plus_18[nmi];
 	uint16_t s=(b->dt[j])&(b->dt[k])&(b->dt[l]);
-	solve_board_t nb=*b;
-	uint16_t* nb_j=nb.dt+j;
-	uint16_t* nb_k=nb.dt+k;
-	uint16_t* nb_l=nb.dt+l;
-	while (1){
+	solve_board_t nb;
+	do{
+		nb=*b;
 		uint16_t m=(~s)|(s-1);
-		(*nb_j)&=m;
-		(*nb_k)&=m;
-		(*nb_l)&=m;
+		nb.dt[j]&=m;
+		nb.dt[k]&=m;
+		nb.dt[l]&=m;
 		if (_solve(&nb,o)){
 			unsigned long i;
 			FIND_FIRST_SET_BIT(i,~m);
@@ -108,11 +111,7 @@ uint8_t _solve(solve_board_t* b,uint8_t* o){
 			return 1;
 		}
 		s&=s-1;
-		if (!s){
-			break;
-		}
-		nb=*b;
-	}
+	} while (s);
 	return 0;
 }
 
@@ -156,16 +155,16 @@ uint8_t solve_sudoku(uint8_t* b){
 	memcpy(tmp,b,81*sizeof(uint8_t));
 	for (uint8_t i=0;i<81;i++){
 		if (*(b+i)){
-			uint16_t m=~(1<<((*(b+i))-1));
-			sb.dt[i/9]&=m;
-			sb.dt[i%9+9]&=m;
-			sb.dt[i/27*3+(i%9)/3+18]&=m;
+			uint16_t m=~(1<<(*(b+i)-1));
+			sb.dt[_div_9_table[i]]&=m;
+			sb.dt[_mod_9_plus_9_table[i]]&=m;
+			sb.dt[_div_27_times_3_plus_mod_9_div_3_plus_18[i]]&=m;
 		}
 		else if (i<64){
-			sb.z64|=(1ull<<i);
+			sb.z64|=1ull<<i;
 		}
 		else{
-			sb.z32|=(1<<(i-64));
+			sb.z32|=1<<(i-64);
 		}
 	}
 	if (_solve(&sb,tmp)){
