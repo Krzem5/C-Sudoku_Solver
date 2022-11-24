@@ -68,10 +68,8 @@ static uint8_t _solve(solve_board_t* board,uint8_t* out){
 			}
 			if (!(possible_numbers&(possible_numbers-1))){
 				out[index]=(uint8_t)FIND_FIRST_SET_BIT(possible_numbers)+1;
-				if (index<64){
-					board->z64&=~(1ull<<index);
-				}
-				else{
+				board->z64&=~(1ull<<index);
+				if (index>63){
 					board->z32&=~(1ull<<(index-64));
 				}
 				(*j)&=~possible_numbers;
@@ -91,10 +89,8 @@ static uint8_t _solve(solve_board_t* board,uint8_t* out){
 	if (shortest_guess_length==10){
 		return 1;
 	}
-	if (next_guess_index<64){
-		board->z64&=~(1ull<<next_guess_index);
-	}
-	else{
+	board->z64&=~(1ull<<next_guess_index);
+	if (next_guess_index>63){
 		board->z32&=~(1u<<(next_guess_index-64));
 	}
 	uint8_t j=_index_to_row[next_guess_index];
