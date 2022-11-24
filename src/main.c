@@ -13,14 +13,14 @@
 
 
 
-void print_board(uint8_t* b){
+void print_board(uint8_t* board){
 	printf("╭───────┬───────┬───────╮\n│ ");
 	for (uint8_t i=0;i<81;i++){
-		if (*(b+i)==0){
+		if (board[i]==0){
 			printf("·");
 		}
 		else{
-			putchar(48+(*(b+i)));
+			putchar(48+board[i]);
 		}
 		if (i%9==8){
 			printf(" │\n");
@@ -49,15 +49,15 @@ void print_board(uint8_t* b){
 
 int main(int argc,const char** argv){
 #if USE_HARD_SUDOKU
-	uint8_t b[81]={0,0,0,0,0,0,0,1,2,0,0,0,0,3,5,0,0,0,0,0,0,6,0,0,0,7,0,7,0,0,0,0,0,3,0,0,0,0,0,4,0,0,8,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1,2,0,0,0,0,0,8,0,0,0,0,0,4,0,0,5,0,0,0,0,6,0,0};
+	uint8_t board[81]={0,0,0,0,0,0,0,1,2,0,0,0,0,3,5,0,0,0,0,0,0,6,0,0,0,7,0,7,0,0,0,0,0,3,0,0,0,0,0,4,0,0,8,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1,2,0,0,0,0,0,8,0,0,0,0,0,4,0,0,5,0,0,0,0,6,0,0};
 #else
-	uint8_t b[81]={0,6,9,0,5,0,3,0,0,0,8,1,0,9,3,0,0,5,0,0,5,4,8,0,0,1,0,9,2,6,0,0,0,7,0,8,0,5,0,0,0,0,0,4,9,0,0,0,0,0,9,6,0,1,0,0,4,0,3,8,0,2,7,0,0,0,0,4,5,0,0,0,5,1,0,2,7,6,8,0,4};
+	uint8_t board[81]={0,6,9,0,5,0,3,0,0,0,8,1,0,9,3,0,0,5,0,0,5,4,8,0,0,1,0,9,2,6,0,0,0,7,0,8,0,5,0,0,0,0,0,4,9,0,0,0,0,0,9,6,0,1,0,0,4,0,3,8,0,2,7,0,0,0,0,4,5,0,0,0,5,1,0,2,7,6,8,0,4};
 #endif
 #ifdef _MSC_VER
 	SetConsoleOutputCP(CP_UTF8);
 	SetConsoleMode(GetStdHandle(-11),7);
 #endif
-	print_board(b);
+	print_board(board);
 #ifdef _MSC_VER
 	HANDLE p=GetCurrentProcess();
 	SetPriorityClass(p,HIGH_PRIORITY_CLASS);
@@ -71,21 +71,21 @@ int main(int argc,const char** argv){
 	struct timespec e;
 	clock_gettime(CLOCK_REALTIME,&s);
 #endif
-	uint8_t o=solve_sudoku(b);
+	_Bool out=solve_sudoku(board);
 #ifdef _MSC_VER
 	QueryPerformanceCounter(&e);
-	double dt=(e.QuadPart-s.QuadPart)*1e6/f.QuadPart*1e-6;
+	double delta_time=(e.QuadPart-s.QuadPart)*1e6/f.QuadPart*1e-6;
 #else
 	clock_gettime(CLOCK_REALTIME,&e);
-	double dt=e.tv_sec-s.tv_sec+(e.tv_nsec-s.tv_nsec)*1e-9;
+	double delta_time=e.tv_sec-s.tv_sec+(e.tv_nsec-s.tv_nsec)*1e-9;
 #endif
 	putchar('\n');
-	if (o){
-		print_board(b);
+	if (out){
+		print_board(board);
 	}
 	else{
 		printf("Failed to Solve Sudoku!\n");
 	}
-	printf("Time: %.6fs\n",dt);
+	printf("Time: %.6fs\n",delta_time);
 	return 0;
 }
