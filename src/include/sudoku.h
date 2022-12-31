@@ -4,7 +4,7 @@
 
 
 
-_Bool solve_sudoku(uint8_t* board_data);
+uint8_t solve_sudoku(uint8_t* b);
 
 
 
