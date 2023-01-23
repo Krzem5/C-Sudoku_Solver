@@ -9,7 +9,7 @@
 
 
 
-#define USE_HARD_SUDOKU 0
+#define USE_HARD_SUDOKU 1
 
 
 

@@ -35,13 +35,13 @@ static const uint8_t _div_27_times_3_plus_mod_9_div_3_plus_18[81]={18,18,18,19,1
 
 
 
-static uint8_t _solve(solve_board_t* b,uint8_t* o){
-	unsigned short f;
-	unsigned long nmi=0;
+static uint8_t _solve(solve_board_t* board,uint8_t* out){
+	unsigned short guess_possibility_count;
+	unsigned long guess_index=0;
 	do{
-		f=10;
-		uint64_t z64=b->z64;
-		uint32_t z32=b->z32;
+		guess_possibility_count=10;
+		uint64_t z64=board->z64;
+		uint32_t z32=board->z32;
 		while (z64||z32){
 			unsigned long i;
 			if (z64){
@@ -53,9 +53,9 @@ static uint8_t _solve(solve_board_t* b,uint8_t* o){
 				z32&=z32-1;
 				i+=64;
 			}
-			uint16_t* j=b->dt+_div_9_table[i];
-			uint16_t* k=b->dt+_mod_9_plus_9_table[i];
-			uint16_t* l=b->dt+_div_27_times_3_plus_mod_9_div_3_plus_18[i];
+			uint16_t* j=board->dt+_div_9_table[i];
+			uint16_t* k=board->dt+_mod_9_plus_9_table[i];
+			uint16_t* l=board->dt+_div_27_times_3_plus_mod_9_div_3_plus_18[i];
 			uint16_t s=(*j)&(*k)&(*l);
 			if (!s){
 				return 0;
@@ -63,62 +63,62 @@ static uint8_t _solve(solve_board_t* b,uint8_t* o){
 			if (!(s&(s-1))){
 				unsigned long bi;
 				FIND_FIRST_SET_BIT(bi,s);
-				*(o+i)=(uint8_t)bi+1;
+				out[i]=(uint8_t)bi+1;
 				if (i<64){
-					b->z64&=~(1ull<<i);
+					board->z64&=~(1ull<<i);
 				}
 				else{
-					b->z32&=~(1ull<<(i-64));
+					board->z32&=~(1ull<<(i-64));
 				}
 				(*j)&=~s;
 				(*k)&=~s;
 				(*l)&=~s;
-				f=0;
+				guess_possibility_count=0;
 			}
-			else if (f){
-				unsigned short bc=POPCOUNT16(s);
-				if (bc<f){
-					f=bc;
-					nmi=i;
+			else if (guess_possibility_count){
+				unsigned short possibility_count=POPCOUNT16(s);
+				if (possibility_count<guess_possibility_count){
+					guess_possibility_count=possibility_count;
+					guess_index=i;
 				}
 			}
 		}
-	} while (!f);
-	if (f==10){
+	} while (!guess_possibility_count);
+	if (guess_possibility_count==10){
 		return 1;
 	}
-	if (nmi<64){
-		b->z64&=~(1ull<<nmi);
+	if (guess_index<64){
+		board->z64&=~(1ull<<guess_index);
 	}
 	else{
-		b->z32&=~(1u<<(nmi-64));
+		board->z32&=~(1u<<(guess_index-64));
 	}
-	unsigned long j=_div_9_table[nmi];
-	unsigned long k=_mod_9_plus_9_table[nmi];
-	unsigned long l=_div_27_times_3_plus_mod_9_div_3_plus_18[nmi];
-	uint16_t s=(b->dt[j])&(b->dt[k])&(b->dt[l]);
-	solve_board_t nb;
+	unsigned long j=_div_9_table[guess_index];
+	unsigned long k=_mod_9_plus_9_table[guess_index];
+	unsigned long l=_div_27_times_3_plus_mod_9_div_3_plus_18[guess_index];
+	uint16_t possibilities=(board->dt[j])&(board->dt[k])&(board->dt[l]);
+	solve_board_t new_board;
 	do{
-		nb=*b;
-		uint16_t m=(~s)|(s-1);
-		nb.dt[j]&=m;
-		nb.dt[k]&=m;
-		nb.dt[l]&=m;
-		if (_solve(&nb,o)){
+		new_board=*board;
+		uint16_t m=(~possibilities)|(possibilities-1);
+		new_board.dt[j]&=m;
+		new_board.dt[k]&=m;
+		new_board.dt[l]&=m;
+		if (_solve(&new_board,out)){
 			unsigned long i;
 			FIND_FIRST_SET_BIT(i,~m);
-			*(o+nmi)=(uint8_t)i+1;
+			out[guess_index]=(uint8_t)i+1;
 			return 1;
 		}
-		s&=s-1;
-	} while (s);
+		possibilities&=possibilities-1;
+	} while (possibilities);
 	return 0;
 }
 
 
 
-uint8_t solve_sudoku(uint8_t* b){
-	solve_board_t sb={
+uint8_t solve_sudoku(uint8_t* board){
+	solve_board_t board_state={
 		0,
 		0,
 		{
@@ -151,24 +151,24 @@ uint8_t solve_sudoku(uint8_t* b){
 			0x1ff
 		}
 	};
-	uint8_t tmp[81];
-	memcpy(tmp,b,81*sizeof(uint8_t));
+	uint8_t solved_board[81];
+	memcpy(solved_board,board,81*sizeof(uint8_t));
 	for (uint8_t i=0;i<81;i++){
-		if (*(b+i)){
-			uint16_t m=~(1<<(*(b+i)-1));
-			sb.dt[_div_9_table[i]]&=m;
-			sb.dt[_mod_9_plus_9_table[i]]&=m;
-			sb.dt[_div_27_times_3_plus_mod_9_div_3_plus_18[i]]&=m;
+		if (board[i]){
+			uint16_t m=~(1<<(board[i]-1));
+			board_state.dt[_div_9_table[i]]&=m;
+			board_state.dt[_mod_9_plus_9_table[i]]&=m;
+			board_state.dt[_div_27_times_3_plus_mod_9_div_3_plus_18[i]]&=m;
 		}
 		else if (i<64){
-			sb.z64|=1ull<<i;
+			board_state.z64|=1ull<<i;
 		}
 		else{
-			sb.z32|=1<<(i-64);
+			board_state.z32|=1<<(i-64);
 		}
 	}
-	if (_solve(&sb,tmp)){
-		memcpy(b,tmp,81*sizeof(uint8_t));
+	if (_solve(&board_state,solved_board)){
+		memcpy(board,solved_board,81*sizeof(uint8_t));
 		return 1;
 	}
 	return 0;
