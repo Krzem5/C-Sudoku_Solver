@@ -4,7 +4,7 @@
 
 
 
-uint8_t solve_sudoku(uint8_t* b);
+_Bool solve_sudoku(uint8_t* b);
 
 
 

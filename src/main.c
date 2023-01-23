@@ -9,6 +9,7 @@
 
 
 
+#define PERF_MODE 0
 #define USE_HARD_SUDOKU 1
 
 
@@ -48,6 +49,18 @@ void print_board(uint8_t* b){
 
 
 int main(int argc,const char** argv){
+#if PERF_MODE
+	struct timespec s;
+	struct timespec e;
+	clock_gettime(CLOCK_REALTIME,&s);
+	for (unsigned int x=0;x<1000;x++){
+		uint8_t b[81]={0,0,0,0,0,0,0,1,2,0,0,0,0,3,5,0,0,0,0,0,0,6,0,0,0,7,0,7,0,0,0,0,0,3,0,0,0,0,0,4,0,0,8,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1,2,0,0,0,0,0,8,0,0,0,0,0,4,0,0,5,0,0,0,0,6,0,0};
+		solve_sudoku(b);
+	}
+	clock_gettime(CLOCK_REALTIME,&e);
+	double dt=e.tv_sec-s.tv_sec+(e.tv_nsec-s.tv_nsec)*1e-9;
+	printf("Time: %.6fs\n",dt/1000);
+#else
 #if USE_HARD_SUDOKU
 	uint8_t b[81]={0,0,0,0,0,0,0,1,2,0,0,0,0,3,5,0,0,0,0,0,0,6,0,0,0,7,0,7,0,0,0,0,0,3,0,0,0,0,0,4,0,0,8,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1,2,0,0,0,0,0,8,0,0,0,0,0,4,0,0,5,0,0,0,0,6,0,0};
 #else
@@ -87,5 +100,6 @@ int main(int argc,const char** argv){
 		printf("Failed to Solve Sudoku!\n");
 	}
 	printf("Time: %.6fs\n",dt);
+#endif
 	return 0;
 }
