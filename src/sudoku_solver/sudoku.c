@@ -48,7 +48,7 @@ static const unsigned int _combined_indices[81]={0x12090000,0x120a0001,0x120b000
 
 
 
-static inline _Bool _solve(solve_board_t* board,uint8_t* out){
+static _Bool _solve(solve_board_t* board,uint8_t* out){
 	solve_board_t stack[81]={*board};
 	unsigned int stack_depth=0;
 	while (1){
@@ -166,8 +166,6 @@ _Bool solve_sudoku(uint8_t* board){
 			0x1ff,
 			0x1ff
 		},
-		0,
-		0,
 		0,
 		0
 	};
