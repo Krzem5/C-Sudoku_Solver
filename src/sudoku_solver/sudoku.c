@@ -34,9 +34,11 @@ static inline unsigned int FIND_FIRST_SET_BIT64(unsigned int m){
 
 
 typedef struct __SOLVE_BOARD{
-	unsigned int dt[27];
+	unsigned int data[27];
+	unsigned int possibilities;
 	uint64_t z64;
 	uint32_t z32;
+	unsigned int guess_index;
 } solve_board_t;
 
 
@@ -48,79 +50,89 @@ static const uint8_t _div_27_times_3_plus_mod_9_div_3_plus_18[81]={18,18,18,19,1
 
 
 static ATTRIBUTES _Bool _solve(solve_board_t* board,uint8_t* out){
-	unsigned short guess_possibility_count;
-	unsigned long guess_index=0;
-	do{
-		guess_possibility_count=10;
-		uint64_t z64=board->z64;
-		uint32_t z32=board->z32;
-		while (z64||z32){
-			unsigned int i;
-			if (z64){
-				i=FIND_FIRST_SET_BIT64(z64);
-				z64&=z64-1;
-			}
-			else{
-				i=FIND_FIRST_SET_BIT(z32);
-				z32&=z32-1;
-				i+=64;
-			}
-			unsigned int* j=board->dt+_div_9_table[i];
-			unsigned int* k=board->dt+_mod_9_plus_9_table[i];
-			unsigned int* l=board->dt+_div_27_times_3_plus_mod_9_div_3_plus_18[i];
-			unsigned int s=(*j)&(*k)&(*l);
-			if (!s){
-				return 0;
-			}
-			if (!_blsr_u32(s)){
-				out[i]=FIND_FIRST_SET_BIT(s)+1;
-				if (i<64){
-					board->z64&=~(1ull<<i);
+	solve_board_t stack[81]={*board};
+	unsigned int stack_depth=0;
+	while (1){
+		board=stack+stack_depth;
+		unsigned short guess_possibility_count;
+		unsigned long guess_index=0;
+		do{
+			guess_possibility_count=10;
+			uint64_t z64=board->z64;
+			uint32_t z32=board->z32;
+			while (z64||z32){
+				unsigned int i;
+				if (z64){
+					i=FIND_FIRST_SET_BIT64(z64);
+					z64&=z64-1;
 				}
 				else{
-					board->z32&=~(1ull<<(i-64));
+					i=FIND_FIRST_SET_BIT(z32);
+					z32&=z32-1;
+					i+=64;
 				}
-				(*j)&=~s;
-				(*k)&=~s;
-				(*l)&=~s;
-				guess_possibility_count=0;
-			}
-			else if (guess_possibility_count){
-				unsigned short possibility_count=POPCOUNT16(s);
-				if (possibility_count<guess_possibility_count){
-					guess_possibility_count=possibility_count;
-					guess_index=i;
+				unsigned int* j=board->data+_div_9_table[i];
+				unsigned int* k=board->data+_mod_9_plus_9_table[i];
+				unsigned int* l=board->data+_div_27_times_3_plus_mod_9_div_3_plus_18[i];
+				unsigned int s=(*j)&(*k)&(*l);
+				if (!s){
+					goto _fail;
+				}
+				if (!_blsr_u32(s)){
+					out[i]=FIND_FIRST_SET_BIT(s)+1;
+					if (i<64){
+						board->z64&=~(1ull<<i);
+					}
+					else{
+						board->z32&=~(1ull<<(i-64));
+					}
+					(*j)&=~s;
+					(*k)&=~s;
+					(*l)&=~s;
+					guess_possibility_count=0;
+				}
+				else if (guess_possibility_count){
+					unsigned short possibility_count=POPCOUNT16(s);
+					if (possibility_count<guess_possibility_count){
+						guess_possibility_count=possibility_count;
+						guess_index=i;
+					}
 				}
 			}
-		}
-	} while (!guess_possibility_count);
-	if (guess_possibility_count==10){
-		return 1;
-	}
-	if (guess_index<64){
-		board->z64&=~(1ull<<guess_index);
-	}
-	else{
-		board->z32&=~(1u<<(guess_index-64));
-	}
-	unsigned long j=_div_9_table[guess_index];
-	unsigned long k=_mod_9_plus_9_table[guess_index];
-	unsigned long l=_div_27_times_3_plus_mod_9_div_3_plus_18[guess_index];
-	unsigned int possibilities=(board->dt[j])&(board->dt[k])&(board->dt[l]);
-	solve_board_t new_board;
-	do{
-		new_board=*board;
-		unsigned int m=(~possibilities)|(possibilities-1);
-		new_board.dt[j]&=m;
-		new_board.dt[k]&=m;
-		new_board.dt[l]&=m;
-		if (_solve(&new_board,out)){
-			out[guess_index]=(uint8_t)FIND_FIRST_SET_BIT(~m)+1;
+		} while (!guess_possibility_count);
+		if (guess_possibility_count==10){
 			return 1;
 		}
-		possibilities&=possibilities-1;
-	} while (possibilities);
-	return 0;
+		if (guess_index<64){
+			board->z64&=~(1ull<<guess_index);
+		}
+		else{
+			board->z32&=~(1u<<(guess_index-64));
+		}
+		board->guess_index=guess_index;
+		board->possibilities=(board->data[_div_9_table[guess_index]])&(board->data[_mod_9_plus_9_table[guess_index]])&(board->data[_div_27_times_3_plus_mod_9_div_3_plus_18[guess_index]]);
+		stack_depth++;
+		goto _check_first_possibility;
+_fail:;
+		if (!stack_depth){
+			return 0;
+		}
+		board=stack+stack_depth-1;
+		if (!board->possibilities){
+			stack_depth--;
+			goto _fail;
+		}
+_check_first_possibility:;
+		unsigned int m=(~board->possibilities)|(board->possibilities-1);
+		board->possibilities=_blsr_u32(board->possibilities);
+		solve_board_t* new_board=stack+stack_depth;
+		*new_board=*board;
+		out[board->guess_index]=FIND_FIRST_SET_BIT(~m)+1;
+		new_board->data[_div_9_table[board->guess_index]]&=m;
+		new_board->data[_mod_9_plus_9_table[board->guess_index]]&=m;
+		new_board->data[_div_27_times_3_plus_mod_9_div_3_plus_18[board->guess_index]]&=m;
+		continue;
+	}
 }
 
 
@@ -164,9 +176,9 @@ _Bool solve_sudoku(uint8_t* board){
 	for (uint8_t i=0;i<81;i++){
 		if (board[i]){
 			uint16_t m=~(1<<(board[i]-1));
-			board_state.dt[_div_9_table[i]]&=m;
-			board_state.dt[_mod_9_plus_9_table[i]]&=m;
-			board_state.dt[_div_27_times_3_plus_mod_9_div_3_plus_18[i]]&=m;
+			board_state.data[_div_9_table[i]]&=m;
+			board_state.data[_mod_9_plus_9_table[i]]&=m;
+			board_state.data[_div_27_times_3_plus_mod_9_div_3_plus_18[i]]&=m;
 		}
 		else if (i<64){
 			board_state.z64|=1ull<<i;
