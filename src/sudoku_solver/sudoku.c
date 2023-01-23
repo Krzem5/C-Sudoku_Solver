@@ -34,9 +34,9 @@ static inline unsigned int FIND_FIRST_SET_BIT64(unsigned int m){
 
 
 typedef struct __SOLVE_BOARD{
+	unsigned int dt[27];
 	uint64_t z64;
 	uint32_t z32;
-	unsigned int dt[27];
 } solve_board_t;
 
 
@@ -127,8 +127,6 @@ static ATTRIBUTES _Bool _solve(solve_board_t* board,uint8_t* out){
 
 _Bool solve_sudoku(uint8_t* board){
 	solve_board_t board_state={
-		0,
-		0,
 		{
 			0x1ff,
 			0x1ff,
@@ -157,7 +155,9 @@ _Bool solve_sudoku(uint8_t* board){
 			0x1ff,
 			0x1ff,
 			0x1ff
-		}
+		},
+		0,
+		0
 	};
 	uint8_t solved_board[81];
 	memcpy(solved_board,board,81*sizeof(uint8_t));
