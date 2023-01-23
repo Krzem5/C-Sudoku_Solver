@@ -9,7 +9,7 @@
 
 
 
-#define PERF_MODE 1
+#define PERF_MODE 0
 #define USE_HARD_SUDOKU 1
 
 
