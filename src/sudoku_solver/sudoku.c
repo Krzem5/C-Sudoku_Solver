@@ -75,25 +75,25 @@ static ATTRIBUTES  _Bool _solve(solve_board_t* board,uint8_t* out){
 				unsigned int* j=board->data+_div_9_table[i];
 				unsigned int* k=board->data+_mod_9_plus_9_table[i];
 				unsigned int* l=board->data+_div_27_times_3_plus_mod_9_div_3_plus_18[i];
-				unsigned int s=(*j)&(*k)&(*l);
-				if (!s){
+				unsigned int possibilities=(*j)&(*k)&(*l);
+				if (!possibilities){
 					goto _fail;
 				}
-				if (!_blsr_u32(s)){
-					out[i]=FIND_FIRST_SET_BIT(s)+1;
+				if (!_blsr_u32(possibilities)){
+					out[i]=FIND_FIRST_SET_BIT(possibilities)+1;
 					if (i<64){
 						board->z64&=~(1ull<<i);
 					}
 					else{
 						board->z32&=~(1ull<<(i-64));
 					}
-					(*j)&=~s;
-					(*k)&=~s;
-					(*l)&=~s;
+					(*j)&=~possibilities;
+					(*k)&=~possibilities;
+					(*l)&=~possibilities;
 					guess_possibility_count=0;
 				}
 				else if (guess_possibility_count){
-					unsigned short possibility_count=POPCOUNT16(s);
+					unsigned short possibility_count=POPCOUNT16(possibilities);
 					if (possibility_count<guess_possibility_count){
 						guess_possibility_count=possibility_count;
 						guess_index=i;
