@@ -11,12 +11,20 @@
 #pragma intrinsic(_BitScanForward)
 #pragma intrinsic(_BitScanForward64)
 #define POPCOUNT16(x) __popcnt16((x))
-#define FIND_FIRST_SET_BIT(i,m) _BitScanForward(&(i),(m))
-#define FIND_FIRST_SET_BIT64(i,m) _BitScanForward64(&(i),(m))
+static inline unsigned int FIND_FIRST_SET_BIT(unsigned int m){
+	unsigned int out;
+	_BitScanForward(&out,m);
+	return out;
+}
+static inline unsigned int FIND_FIRST_SET_BIT64(unsigned int m){
+	unsigned int out;
+	_BitScanForward64(&out,m);
+	return out;
+}
 #else
-#define POPCOUNT16(x) __builtin_popcount((x))
-#define FIND_FIRST_SET_BIT(i,m) ((i)=(__builtin_ffs((m))-1))
-#define FIND_FIRST_SET_BIT64(i,m) ((i)=(__builtin_ffsll((m))-1))
+#define POPCOUNT16(x) __builtin_popcount(x)
+#define FIND_FIRST_SET_BIT(m) (__builtin_ffs(m)-1)
+#define FIND_FIRST_SET_BIT64(m) (__builtin_ffsll(m)-1)
 #endif
 
 
@@ -43,13 +51,13 @@ static uint8_t _solve(solve_board_t* board,uint8_t* out){
 		uint64_t z64=board->z64;
 		uint32_t z32=board->z32;
 		while (z64||z32){
-			unsigned long i;
+			unsigned int i;
 			if (z64){
-				FIND_FIRST_SET_BIT64(i,z64);
+				i=FIND_FIRST_SET_BIT64(z64);
 				z64&=z64-1;
 			}
 			else{
-				FIND_FIRST_SET_BIT(i,z32);
+				i=FIND_FIRST_SET_BIT(z32);
 				z32&=z32-1;
 				i+=64;
 			}
@@ -61,9 +69,7 @@ static uint8_t _solve(solve_board_t* board,uint8_t* out){
 				return 0;
 			}
 			if (!(s&(s-1))){
-				unsigned long bi;
-				FIND_FIRST_SET_BIT(bi,s);
-				out[i]=(uint8_t)bi+1;
+				out[i]=FIND_FIRST_SET_BIT(s)+1;
 				if (i<64){
 					board->z64&=~(1ull<<i);
 				}
@@ -105,9 +111,7 @@ static uint8_t _solve(solve_board_t* board,uint8_t* out){
 		new_board.dt[k]&=m;
 		new_board.dt[l]&=m;
 		if (_solve(&new_board,out)){
-			unsigned long i;
-			FIND_FIRST_SET_BIT(i,~m);
-			out[guess_index]=(uint8_t)i+1;
+			out[guess_index]=(uint8_t)FIND_FIRST_SET_BIT(~m)+1;
 			return 1;
 		}
 		possibilities&=possibilities-1;
